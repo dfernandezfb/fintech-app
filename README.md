@@ -14,6 +14,8 @@ Aplicación de gestión de transacciones con aprobación manual para montos elev
 
 ---
 
+> Los comandos de `docker compose` deben ejecutarse desde la raíz del proyecto (`fintech-app/`), donde está el `docker-compose.yml`.
+
 ## Opción A — Docker completo
 
 Backend y base de datos corren en contenedores. Útil para probar el build de producción o levantar el stack rápido sin instalar dependencias.

@@ -101,6 +101,6 @@ El auto-rechazo en cascada resuelve el caso donde dos transacciones pendientes s
 
 ### Regla de negocio — umbral de aprobación manual
 
-Transacciones **≤ $50.000** se confirman automáticamente en el momento de la creación (flujo síncróno con debit/credit inmediato).
+Transacciones **≤ $50.000** se confirman automáticamente en el momento de la creación (flujo síncrono con debit/credit inmediato).
 
 Transacciones **> $50.000** quedan en estado `pending` y requieren aprobación manual desde el panel de aprobaciones. El balance del emisor **no se reserva** al crear la transacción pendiente — solo se mueven fondos al momento de la aprobación.
