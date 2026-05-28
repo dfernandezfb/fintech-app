@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLoaderData, useRevalidator, useFetcher } from 'react-router'
 import { ValidationError } from 'yup'
 import type { Route } from './+types/approval'
@@ -105,6 +105,10 @@ function TransactionRow({
   const isProcessing = fetcher.state !== 'idle'
   const isDone       = fetcher.state === 'idle' && fetcher.data?.ok === true
 
+  useEffect(() => {
+    if (fetcher.data?.ok === true) setOpen(false)
+  }, [fetcher.data])
+
   if (isDone) return null
 
   const actionError =
@@ -169,7 +173,6 @@ function TransactionRow({
             <fetcher.Form
               method="post"
               action="/aprobaciones"
-              onSubmit={() => setOpen(false)}
             >
               <input type="hidden" name="intent" value="reject" />
               <input type="hidden" name="txId"   value={tx.id} />

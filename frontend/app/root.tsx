@@ -8,7 +8,7 @@ export const links: LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -31,11 +31,11 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: { error: unknown }) {
-  const message = error instanceof Error ? error.message : 'An unexpected error occurred'
+  const message = error instanceof Error ? error.message : 'Ocurrió un error inesperado.'
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
+        <h1 className="text-2xl font-bold text-destructive">Algo salió mal</h1>
         <p className="mt-2 text-muted-foreground">{message}</p>
       </div>
     </div>

@@ -1,12 +1,9 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router'
+import { redirect } from 'react-router'
+
+export function loader() {
+  throw redirect('/dashboard')
+}
 
 export default function Home() {
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    navigate('/dashboard', { replace: true })
-  }, [navigate])
-
   return null
 }
