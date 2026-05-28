@@ -1,8 +1,6 @@
 import * as yup from 'yup'
 import type { ValidationError } from 'yup'
 
-// ── Schemas ────────────────────────────────────────────────────────────────
-
 export const createTransactionSchema = yup.object({
   fromUserId: yup
     .string()
@@ -28,14 +26,8 @@ export const rejectTransactionSchema = yup.object({
   reason: yup.string().trim().optional().default(''),
 })
 
-// ── Helper ─────────────────────────────────────────────────────────────────
-
 export type FieldErrors = Record<string, string>
 
-/**
- * Converts a Yup ValidationError into a flat { field: message } map.
- * Works for both abortEarly:true and abortEarly:false.
- */
 export function extractFieldErrors(err: ValidationError): FieldErrors {
   const result: FieldErrors = {}
   const items = err.inner.length > 0 ? err.inner : [err]

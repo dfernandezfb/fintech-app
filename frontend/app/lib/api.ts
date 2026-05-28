@@ -53,8 +53,6 @@ export function friendlyError(err: unknown): string {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    // Only advertise JSON content-type when a body is actually being sent.
-    // Fastify rejects Content-Type: application/json with an empty body.
     ...(options?.body != null && { headers: { 'Content-Type': 'application/json' } }),
     ...options,
   })

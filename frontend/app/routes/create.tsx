@@ -20,20 +20,14 @@ import { Skeleton } from '~/components/ui/skeleton'
 
 const LARGE_TX_THRESHOLD = 50_000
 
-// ── Action result type ─────────────────────────────────────────────────────
-
 type ActionData =
   | { ok: true; transaction: Transaction }
   | { ok: false; fieldErrors?: FieldErrors; error?: string }
-
-// ── Loader ─────────────────────────────────────────────────────────────────
 
 export async function loader(): Promise<{ users: User[] }> {
   const users = await api.getUsers()
   return { users }
 }
-
-// ── Action ─────────────────────────────────────────────────────────────────
 
 export async function action({ request }: Route.ActionArgs): Promise<ActionData> {
   const formData = await request.formData()
@@ -60,8 +54,6 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionData>
   }
 }
 
-// ── Hydrate fallback ───────────────────────────────────────────────────────
-
 export function HydrateFallback() {
   return (
     <div className="mx-auto max-w-lg space-y-4">
@@ -71,16 +63,12 @@ export function HydrateFallback() {
   )
 }
 
-// ── Component ──────────────────────────────────────────────────────────────
-
 export default function CreateTransaction() {
   const { users }    = useLoaderData<typeof loader>()
   const actionData   = useActionData<typeof action>() as ActionData | undefined
   const navigation   = useNavigation()
   const isSubmitting = navigation.state === 'submitting'
 
-  // Controlled selects — Radix Select doesn't submit natively, so we
-  // mirror the value into hidden <input>s that the Form picks up.
   const [fromUserId, setFromUserId] = useState(users[0]?.id ?? '')
   const [toUserId,   setToUserId]   = useState(users[1]?.id ?? '')
 
@@ -97,17 +85,14 @@ export default function CreateTransaction() {
         <p className="text-muted-foreground">Transferir fondos entre usuarios</p>
       </div>
 
-      {/* ── Form ── */}
       {!result && (
         <Card>
           <CardContent className="pt-6">
             <Form method="post" className="space-y-5">
 
-              {/* Hidden inputs carry the Radix Select values into FormData */}
               <input type="hidden" name="fromUserId" value={fromUserId} />
               <input type="hidden" name="toUserId"   value={toUserId} />
 
-              {/* From */}
               <div className="space-y-1.5">
                 <Label>Desde</Label>
                 <Select value={fromUserId} onValueChange={setFromUserId}>
@@ -127,7 +112,6 @@ export default function CreateTransaction() {
                 )}
               </div>
 
-              {/* To */}
               <div className="space-y-1.5">
                 <Label>Para</Label>
                 <Select value={toUserId} onValueChange={setToUserId}>
@@ -147,7 +131,6 @@ export default function CreateTransaction() {
                 )}
               </div>
 
-              {/* Amount */}
               <div className="space-y-1.5">
                 <Label htmlFor="amount">Monto</Label>
                 <div className="relative">
@@ -172,7 +155,6 @@ export default function CreateTransaction() {
                 </p>
               </div>
 
-              {/* API error */}
               {apiError && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                   <p className="font-medium">Transacción fallida</p>
@@ -198,7 +180,6 @@ export default function CreateTransaction() {
         </Card>
       )}
 
-      {/* ── Result ── */}
       {result && (
         <Card className={
           result.status === 'confirmed'

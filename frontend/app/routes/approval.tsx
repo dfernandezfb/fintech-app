@@ -15,13 +15,9 @@ import { Label } from '~/components/ui/label'
 import { Textarea } from '~/components/ui/textarea'
 import { Skeleton } from '~/components/ui/skeleton'
 
-// ── Action result type (shared with TransactionRow) ────────────────────────
-
 export type ApprovalActionData =
   | { ok: true;  txId: string }
   | { ok: false; txId?: string; error?: string; fieldErrors?: FieldErrors }
-
-// ── Loader ─────────────────────────────────────────────────────────────────
 
 export async function loader() {
   try {
@@ -34,8 +30,6 @@ export async function loader() {
     return { transactions: [] as Transaction[], users: [] as User[], loadError: friendlyError(err) }
   }
 }
-
-// ── Action ─────────────────────────────────────────────────────────────────
 
 export async function action({ request }: Route.ActionArgs): Promise<ApprovalActionData> {
   try {
@@ -64,8 +58,6 @@ export async function action({ request }: Route.ActionArgs): Promise<ApprovalAct
   }
 }
 
-// ── Hydrate fallback ───────────────────────────────────────────────────────
-
 export function HydrateFallback() {
   return (
     <div className="space-y-6">
@@ -74,9 +66,6 @@ export function HydrateFallback() {
     </div>
   )
 }
-
-// ── Route-level error boundary ─────────────────────────────────────────────
-// Catches any unhandled loader/action errors so they never bubble to root.
 
 export function ErrorBoundary() {
   return (
@@ -103,8 +92,6 @@ export function ErrorBoundary() {
   )
 }
 
-// ── TransactionRow sub-component ───────────────────────────────────────────
-
 function TransactionRow({
   tx,
   usersMap,
@@ -118,7 +105,6 @@ function TransactionRow({
   const isProcessing = fetcher.state !== 'idle'
   const isDone       = fetcher.state === 'idle' && fetcher.data?.ok === true
 
-  // Remove row from the table once the action succeeds — no page reload needed
   if (isDone) return null
 
   const actionError =
@@ -141,8 +127,6 @@ function TransactionRow({
       <td className="px-4 py-3 text-muted-foreground">{formatDate(tx.createdAt)}</td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-2">
-
-          {/* ── Approve ── */}
           <fetcher.Form method="post" action="/aprobaciones">
             <input type="hidden" name="intent" value="approve" />
             <input type="hidden" name="txId"   value={tx.id} />
@@ -158,7 +142,6 @@ function TransactionRow({
             </Button>
           </fetcher.Form>
 
-          {/* ── Reject ── */}
           <Button
             size="sm"
             variant="outline"
@@ -169,13 +152,11 @@ function TransactionRow({
             Rechazar
           </Button>
 
-          {/* Per-row inline error */}
           {actionError && (
             <span className="text-xs text-destructive">{actionError}</span>
           )}
         </div>
 
-        {/* ── Reject dialog ── */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
             <DialogHeader>
@@ -222,8 +203,6 @@ function TransactionRow({
   )
 }
 
-// ── Page component ─────────────────────────────────────────────────────────
-
 export default function Approval() {
   const { transactions, users, loadError } = useLoaderData<typeof loader>()
   const { revalidate, state }              = useRevalidator()
@@ -243,14 +222,12 @@ export default function Approval() {
         </Button>
       </div>
 
-      {/* Load error banner */}
       {loadError && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {loadError}
         </div>
       )}
 
-      {/* Summary badge */}
       {!loadError && (
         <div>
           <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${
@@ -265,7 +242,6 @@ export default function Approval() {
         </div>
       )}
 
-      {/* Table */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Transacciones Pendientes</CardTitle>

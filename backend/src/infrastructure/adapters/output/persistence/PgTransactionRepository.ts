@@ -78,7 +78,6 @@ export class PgTransactionRepository implements ITransactionRepository {
 
   async createAndConfirm(params: CreateTransactionParams): Promise<Transaction> {
     return this.db.transaction(async (tx) => {
-      // Lock sender to serialize concurrent transactions from same origin
       const [sender] = await tx
         .select({ balance: users.balance })
         .from(users)
@@ -88,7 +87,6 @@ export class PgTransactionRepository implements ITransactionRepository {
       if (!sender) throw new UserNotFoundError(params.fromUserId)
       if (parseFloat(sender.balance) < params.amount) throw new InsufficientBalanceError()
 
-      // Debit — PostgreSQL computes balance_before/after with exact NUMERIC arithmetic
       const [senderResult] = await tx
         .update(users)
         .set({ balance: sql`${users.balance} - ${String(params.amount)}` })
@@ -98,7 +96,6 @@ export class PgTransactionRepository implements ITransactionRepository {
           balanceBefore: sql<string>`${users.balance} + ${String(params.amount)}`,
         })
 
-      // Credit — implicit row lock from UPDATE
       const [receiverResult] = await tx
         .update(users)
         .set({ balance: sql`${users.balance} + ${String(params.amount)}` })
@@ -145,7 +142,6 @@ export class PgTransactionRepository implements ITransactionRepository {
 
   async approve(transactionId: string): Promise<Transaction> {
     return this.db.transaction(async (tx) => {
-      // Lock transaction row — serializes concurrent approve/reject calls
       const [pending] = await tx
         .select()
         .from(transactions)
@@ -157,7 +153,6 @@ export class PgTransactionRepository implements ITransactionRepository {
 
       const amount = parseFloat(pending.amount)
 
-      // Lock sender to check balance
       const [sender] = await tx
         .select({ balance: users.balance })
         .from(users)
@@ -212,11 +207,6 @@ export class PgTransactionRepository implements ITransactionRepository {
         },
       ])
 
-      // Auto-reject any remaining pending transactions from the same sender
-      // whose amount now exceeds the updated balance.
-      // This can happen when multiple large transactions were created as pending
-      // simultaneously — each was valid on its own, but together they exceed
-      // the sender's funds.
       const newBalance = parseFloat(senderResult.balanceAfter)
 
       const otherPending = await tx
@@ -249,7 +239,6 @@ export class PgTransactionRepository implements ITransactionRepository {
 
   async reject(transactionId: string, reason?: string): Promise<Transaction> {
     return this.db.transaction(async (tx) => {
-      // Lock transaction row
       const [pending] = await tx
         .select()
         .from(transactions)

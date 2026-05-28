@@ -63,7 +63,6 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        // z-[200] ensures it renders above everything including sticky headers (z-40)
         'z-[200] max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-white text-foreground shadow-lg',
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',

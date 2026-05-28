@@ -11,15 +11,12 @@ import {
 } from '~/components/ui/select'
 import { Skeleton } from '~/components/ui/skeleton'
 
-// ── Loader ─────────────────────────────────────────────────────────────────
-
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const userId = url.searchParams.get('userId')
 
   const users = await api.getUsers()
 
-  // Auto-redirect to first user when no userId is in the URL
   if (!userId && users.length > 0) {
     throw redirect(`/dashboard?userId=${users[0].id}`)
   }
@@ -28,8 +25,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   return { users, transactions, selectedUserId: userId }
 }
-
-// ── Hydrate fallback (shown while loader runs on the client after hydration) ─
 
 export function HydrateFallback() {
   return (
@@ -42,10 +37,6 @@ export function HydrateFallback() {
     </div>
   )
 }
-
-// ── TruncatedReason ────────────────────────────────────────────────────────
-// Shows the rejection reason truncated to one line. Only activates the
-// tooltip if the text is actually clipped (scrollWidth > offsetWidth).
 
 function TruncatedReason({ reason }: { reason: string }) {
   const ref = useRef<HTMLSpanElement>(null)
@@ -76,8 +67,6 @@ function TruncatedReason({ reason }: { reason: string }) {
     </TooltipProvider>
   )
 }
-
-// ── Component ──────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const { users, transactions, selectedUserId } = useLoaderData<typeof loader>()
@@ -113,7 +102,6 @@ export default function Dashboard() {
         <p className="text-muted-foreground">Ver historial de transacciones para cualquier usuario</p>
       </div>
 
-      {/* User selector */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-3">
@@ -137,16 +125,15 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Stats */}
       {!isLoading && transactions.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { label: 'Total',     value: counts.total,     color: '',                  filter: null                  },
-            { label: 'Confirmadas', value: counts.confirmed, color: 'text-emerald-600',  filter: 'confirmed' as const  },
-            { label: 'Pendientes',   value: counts.pending,   color: 'text-amber-600',    filter: 'pending'   as const  },
-            { label: 'Rechazadas',  value: counts.rejected,  color: 'text-red-600',      filter: 'rejected'  as const  },
+            { label: 'Total',       value: counts.total,     color: '',                 filter: null                  },
+            { label: 'Confirmadas', value: counts.confirmed, color: 'text-emerald-600', filter: 'confirmed' as const  },
+            { label: 'Pendientes',  value: counts.pending,   color: 'text-amber-600',   filter: 'pending'   as const  },
+            { label: 'Rechazadas',  value: counts.rejected,  color: 'text-red-600',     filter: 'rejected'  as const  },
           ].map(({ label, value, color, filter }) => {
-            const isActive = statusFilter === filter
+            const isActive    = statusFilter === filter
             const isClickable = filter !== null
             return (
               <Card
@@ -165,7 +152,7 @@ export default function Dashboard() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     {label}
-                    {isActive && label!=='Total' && (
+                    {isActive && label !== 'Total' && (
                       <span className="ml-1.5 text-xs font-normal opacity-60">· click para limpiar</span>
                     )}
                   </CardTitle>
@@ -179,7 +166,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">
