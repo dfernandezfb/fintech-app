@@ -6,6 +6,8 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+# React Router auto-generated types
+.react-router/
 
 # ── Environment variables ─────────────────────────────────────────
 .env

@@ -4,7 +4,8 @@ import swaggerUi from '@fastify/swagger-ui'
 import Fastify from 'fastify'
 import { errorHandler } from '../adapters/input/http/error.handler'
 import { transactionRoutes } from '../adapters/input/http/transaction.routes'
-import { transactionController } from '../config/container'
+import { userRoutes } from '../adapters/input/http/user.routes'
+import { transactionController, userController } from '../config/container'
 
 export async function buildServer() {
   const fastify = Fastify({
@@ -35,16 +36,28 @@ export async function buildServer() {
   await fastify.register(swaggerUi, { routePrefix: '/docs' })
 
   fastify.addSchema({
+    $id: 'User',
+    type: 'object',
+    properties: {
+      id:        { type: 'string' },
+      name:      { type: 'string' },
+      email:     { type: 'string' },
+      balance:   { type: 'number' },
+      createdAt: { type: 'string', format: 'date-time' },
+    },
+  })
+
+  fastify.addSchema({
     $id: 'Transaction',
     type: 'object',
     properties: {
-      id: { type: 'string' },
-      fromUserId: { type: 'string' },
-      toUserId: { type: 'string' },
-      amount: { type: 'number' },
-      status: { type: 'string', enum: ['pending', 'confirmed', 'rejected'] },
+      id:              { type: 'string' },
+      fromUserId:      { type: 'string' },
+      toUserId:        { type: 'string' },
+      amount:          { type: 'number' },
+      status:          { type: 'string', enum: ['pending', 'confirmed', 'rejected'] },
       rejectionReason: { type: 'string', nullable: true },
-      createdAt: { type: 'string', format: 'date-time' },
+      createdAt:       { type: 'string', format: 'date-time' },
     },
   })
 
@@ -55,6 +68,7 @@ export async function buildServer() {
     timestamp: new Date().toISOString(),
   }))
 
+  await fastify.register(userRoutes,        { controller: userController })
   await fastify.register(transactionRoutes, { controller: transactionController })
 
   return fastify

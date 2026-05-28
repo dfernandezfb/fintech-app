@@ -9,6 +9,7 @@ export interface CreateTransactionParams {
 export interface ITransactionRepository {
   findById(id: string): Promise<Transaction | null>
   findByUserId(userId: string): Promise<Transaction[]>
+  findAllPending(): Promise<Transaction[]>
   createAndConfirm(params: CreateTransactionParams): Promise<Transaction>
   createPending(params: CreateTransactionParams): Promise<Transaction>
   approve(transactionId: string): Promise<Transaction>

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  InsufficientBalanceError,
   TransactionNotFoundError,
   TransactionNotPendingError,
 } from '../../../domain/errors/DomainErrors'
@@ -49,5 +50,20 @@ describe('ApproveTransactionUseCase', () => {
 
     expect(transactionRepo.approve).toHaveBeenCalledWith(pending.id)
     expect(result.status).toBe('confirmed')
+  })
+
+  it('throws InsufficientBalanceError when the sender no longer has enough balance at approval time', async () => {
+    // This can happen legitimately: e.g. another transaction from the same
+    // sender was confirmed in between, draining the balance.
+    // The repository handles the balance check atomically (SELECT FOR UPDATE).
+    // The auto-reject of other pending transactions whose amount now exceeds
+    // the updated balance is also handled by the repository — it is an
+    // internal DB concern not visible at this layer.
+    const pending = aTransaction({ status: 'pending' })
+
+    vi.mocked(transactionRepo.findById).mockResolvedValue(pending)
+    vi.mocked(transactionRepo.approve).mockRejectedValue(new InsufficientBalanceError())
+
+    await expect(useCase.execute(pending.id)).rejects.toThrow(InsufficientBalanceError)
   })
 })

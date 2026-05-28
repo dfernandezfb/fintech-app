@@ -4,6 +4,18 @@ import { IUserRepository } from '../../../../application/ports/output/IUserRepos
 import { DrizzleDb } from '../../../database/db'
 import { users } from '../../../database/schema'
 
+type UserRow = typeof users.$inferSelect
+
+function mapRow(row: UserRow): User {
+  return {
+    id:        row.id,
+    name:      row.name,
+    email:     row.email,
+    balance:   parseFloat(row.balance),
+    createdAt: row.createdAt,
+  }
+}
+
 export class PgUserRepository implements IUserRepository {
   constructor(private readonly db: DrizzleDb) {}
 
@@ -14,14 +26,15 @@ export class PgUserRepository implements IUserRepository {
       .where(eq(users.id, id))
       .limit(1)
 
-    if (!row) return null
+    return row ? mapRow(row) : null
+  }
 
-    return {
-      id:        row.id,
-      name:      row.name,
-      email:     row.email,
-      balance:   parseFloat(row.balance),
-      createdAt: row.createdAt,
-    }
+  async findAll(): Promise<User[]> {
+    const rows = await this.db
+      .select()
+      .from(users)
+      .orderBy(users.name)
+
+    return rows.map(mapRow)
   }
 }

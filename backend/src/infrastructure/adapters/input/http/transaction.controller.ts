@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import {
   IApproveTransactionUseCase,
   ICreateTransactionUseCase,
+  IListPendingTransactionsUseCase,
   IListTransactionsUseCase,
   IRejectTransactionUseCase,
 } from '../../../../application/ports/input/transaction.use-cases.port'
@@ -10,6 +11,7 @@ export class TransactionController {
   constructor(
     private readonly createTransaction: ICreateTransactionUseCase,
     private readonly listTransactions: IListTransactionsUseCase,
+    private readonly listPendingTransactions: IListPendingTransactionsUseCase,
     private readonly approveTransaction: IApproveTransactionUseCase,
     private readonly rejectTransaction: IRejectTransactionUseCase
   ) {}
@@ -28,6 +30,11 @@ export class TransactionController {
     reply: FastifyReply
   ) {
     const transactions = await this.listTransactions.execute(request.query.userId)
+    return reply.send(transactions)
+  }
+
+  async listPending(_request: FastifyRequest, reply: FastifyReply) {
+    const transactions = await this.listPendingTransactions.execute()
     return reply.send(transactions)
   }
 

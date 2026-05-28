@@ -1,4 +1,4 @@
-import { eq, InferSelectModel, or, sql } from 'drizzle-orm'
+import { and, eq, inArray, InferSelectModel, or, sql } from 'drizzle-orm'
 import { Transaction } from '../../../../domain/entities/Transaction'
 import {
   InsufficientBalanceError,
@@ -38,6 +38,16 @@ export class PgTransactionRepository implements ITransactionRepository {
       .limit(1)
 
     return row ? mapRow(row) : null
+  }
+
+  async findAllPending(): Promise<Transaction[]> {
+    const rows = await this.db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.status, 'pending'))
+      .orderBy(sql`${transactions.createdAt} desc`)
+
+    return rows.map(mapRow)
   }
 
   async findByUserId(userId: string): Promise<Transaction[]> {
@@ -201,6 +211,37 @@ export class PgTransactionRepository implements ITransactionRepository {
           balanceAfter:  receiverResult.balanceAfter,
         },
       ])
+
+      // Auto-reject any remaining pending transactions from the same sender
+      // whose amount now exceeds the updated balance.
+      // This can happen when multiple large transactions were created as pending
+      // simultaneously — each was valid on its own, but together they exceed
+      // the sender's funds.
+      const newBalance = parseFloat(senderResult.balanceAfter)
+
+      const otherPending = await tx
+        .select({ id: transactions.id, amount: transactions.amount })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.fromUserId, pending.fromUserId),
+            eq(transactions.status, 'pending'),
+          )
+        )
+
+      const toRejectIds = otherPending
+        .filter((t) => parseFloat(t.amount) > newBalance)
+        .map((t) => t.id)
+
+      if (toRejectIds.length > 0) {
+        await tx
+          .update(transactions)
+          .set({
+            status:          'rejected',
+            rejectionReason: 'Saldo insuficiente tras la aprobación de otra transacción',
+          })
+          .where(inArray(transactions.id, toRejectIds))
+      }
 
       return mapRow(confirmed)
     })

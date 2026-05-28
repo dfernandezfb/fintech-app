@@ -38,6 +38,20 @@ export async function transactionRoutes(
   )
 
   fastify.get(
+    '/transactions/pending',
+    {
+      schema: {
+        tags: ['Transactions'],
+        summary: 'List all pending transactions',
+        response: {
+          200: { type: 'array', items: { $ref: 'Transaction#' } },
+        },
+      },
+    },
+    controller.listPending.bind(controller)
+  )
+
+  fastify.get(
     '/transactions',
     {
       schema: {

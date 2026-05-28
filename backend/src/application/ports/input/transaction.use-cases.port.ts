@@ -16,3 +16,7 @@ export interface IApproveTransactionUseCase {
 export interface IRejectTransactionUseCase {
   execute(transactionId: string, reason?: string): Promise<Transaction>
 }
+
+export interface IListPendingTransactionsUseCase {
+  execute(): Promise<Transaction[]>
+}
