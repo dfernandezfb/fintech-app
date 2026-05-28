@@ -4,76 +4,121 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "aliceId", "value": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11" },
-    { "key": "bobId",   "value": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22" },
-    { "key": "carlosId","value": "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33" },
-    { "key": "dianaId", "value": "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44" },
+    { "key": "baseUrl",       "value": "http://localhost:3000" },
+    { "key": "aliceId",       "value": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11" },
+    { "key": "bobId",         "value": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22" },
+    { "key": "carlosId",      "value": "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33" },
+    { "key": "dianaId",       "value": "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44" },
     { "key": "transactionId", "value": "" }
   ],
   "item": [
     {
-      "name": "Create transaction (auto-confirm ≤ 50k)",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"] },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"fromUserId\": \"{{aliceId}}\",\n  \"toUserId\": \"{{bobId}}\",\n  \"amount\": 1000\n}"
+      "name": "Users",
+      "item": [
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Create transaction (pending > 50k)",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"] },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"fromUserId\": \"{{aliceId}}\",\n  \"toUserId\": \"{{bobId}}\",\n  \"amount\": 60000\n}"
-        }
-      }
-    },
-    {
-      "name": "List transactions by user",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "{{baseUrl}}/transactions?userId={{aliceId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["transactions"],
-          "query": [{ "key": "userId", "value": "{{aliceId}}" }]
-        }
-      }
-    },
-    {
-      "name": "Approve transaction",
-      "request": {
-        "method": "PATCH",
-        "url": {
-          "raw": "{{baseUrl}}/transactions/{{transactionId}}/approve",
-          "host": ["{{baseUrl}}"],
-          "path": ["transactions", "{{transactionId}}", "approve"]
-        }
-      }
-    },
-    {
-      "name": "Reject transaction",
-      "request": {
-        "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": {
-          "raw": "{{baseUrl}}/transactions/{{transactionId}}/reject",
-          "host": ["{{baseUrl}}"],
-          "path": ["transactions", "{{transactionId}}", "reject"]
+      "name": "Transactions",
+      "item": [
+        {
+          "name": "Create transaction (auto-confirm ≤ 50k)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromUserId\": \"{{aliceId}}\",\n  \"toUserId\": \"{{bobId}}\",\n  \"amount\": 1000\n}"
+            }
+          }
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"reason\": \"Suspicious activity\"\n}"
+        {
+          "name": "Create transaction (pending > 50k)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromUserId\": \"{{aliceId}}\",\n  \"toUserId\": \"{{bobId}}\",\n  \"amount\": 60000\n}"
+            }
+          }
+        },
+        {
+          "name": "List transactions by user",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/transactions?userId={{aliceId}}&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"],
+              "query": [
+                { "key": "userId", "value": "{{aliceId}}" },
+                { "key": "page",   "value": "1" },
+                { "key": "limit",  "value": "20" },
+                { "key": "status", "value": "confirmed", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List pending transactions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/transactions/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "pending"]
+            }
+          }
+        },
+        {
+          "name": "Approve transaction",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject transaction",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}", "reject"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Actividad sospechosa\"\n}"
+            }
+          }
         }
-      }
+      ]
     }
   ]
 }
