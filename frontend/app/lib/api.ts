@@ -24,6 +24,21 @@ export interface CreateTransactionDto {
   amount:     number
 }
 
+export interface StatusCounts {
+  confirmed: number
+  pending:   number
+  rejected:  number
+}
+
+export interface PaginatedResult<T> {
+  data:         T[]
+  total:        number
+  page:         number
+  limit:        number
+  totalPages:   number
+  statusCounts: StatusCounts
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -48,7 +63,7 @@ export function friendlyError(err: unknown): string {
   if (err instanceof ApiError) {
     return ERROR_LABELS[err.code] ?? err.message
   }
-  return 'An unexpected error occurred. Please try again.'
+  return 'Ocurrió un error inesperado. Por favor, intentá de nuevo.'
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -67,8 +82,11 @@ export const api = {
   getUsers: () =>
     request<User[]>('/users'),
 
-  getTransactions: (userId: string) =>
-    request<Transaction[]>(`/transactions?userId=${userId}`),
+  getTransactions: (userId: string, page = 1, limit = 20, status?: string) => {
+    const params = new URLSearchParams({ userId, page: String(page), limit: String(limit) })
+    if (status) params.set('status', status)
+    return request<PaginatedResult<Transaction>>(`/transactions?${params}`)
+  },
 
   getPendingTransactions: () =>
     request<Transaction[]>('/transactions/pending'),

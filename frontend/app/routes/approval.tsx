@@ -179,7 +179,7 @@ function TransactionRow({
                 <Textarea
                   id={`reason-${tx.id}`}
                   name="reason"
-                  placeholder="e.g. Exceeds daily limit, suspicious activity…"
+                  placeholder="Ej. Excede el límite diario, actividad sospechosa…"
                   rows={3}
                 />
                 {fieldErrors?.reason && (
@@ -237,7 +237,7 @@ export default function Approval() {
           }`}>
             {transactions.length === 0
               ? '✓ No hay transacciones pendientes'
-              : `${transactions.length} transaccion${transactions.length > 1 ? 'es' : ''} esperando revisión`}
+              : `${transactions.length} transacción${transactions.length > 1 ? 'es' : ''} esperando revisión`}
           </span>
         </div>
       )}
@@ -259,8 +259,8 @@ export default function Approval() {
                 <thead>
                   <tr className="border-b bg-muted/30 text-left">
                     <th className="px-4 py-3 font-medium text-muted-foreground">ID</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">Desde</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">Destinatario</th>
+                    <th className="px-4 py-3 font-medium text-muted-foreground">Origen</th>
+                    <th className="px-4 py-3 font-medium text-muted-foreground">Destino</th>
                     <th className="px-4 py-3 font-medium text-muted-foreground text-right">Monto</th>
                     <th className="px-4 py-3 font-medium text-muted-foreground">Fecha</th>
                     <th className="px-4 py-3 font-medium text-muted-foreground text-right">Acciones</th>

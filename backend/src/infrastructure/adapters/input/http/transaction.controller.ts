@@ -9,11 +9,11 @@ import {
 
 export class TransactionController {
   constructor(
-    private readonly createTransaction: ICreateTransactionUseCase,
-    private readonly listTransactions: IListTransactionsUseCase,
-    private readonly listPendingTransactions: IListPendingTransactionsUseCase,
-    private readonly approveTransaction: IApproveTransactionUseCase,
-    private readonly rejectTransaction: IRejectTransactionUseCase
+    private readonly createTransaction:        ICreateTransactionUseCase,
+    private readonly listTransactions:         IListTransactionsUseCase,
+    private readonly listPendingTransactions:  IListPendingTransactionsUseCase,
+    private readonly approveTransaction:       IApproveTransactionUseCase,
+    private readonly rejectTransaction:        IRejectTransactionUseCase
   ) {}
 
   async create(
@@ -21,16 +21,17 @@ export class TransactionController {
     reply: FastifyReply
   ) {
     const transaction = await this.createTransaction.execute(request.body)
-    const statusCode = transaction.status === 'pending' ? 202 : 201
+    const statusCode  = transaction.status === 'pending' ? 202 : 201
     return reply.status(statusCode).send(transaction)
   }
 
   async list(
-    request: FastifyRequest<{ Querystring: { userId: string } }>,
+    request: FastifyRequest<{ Querystring: { userId: string; page: number; limit: number; status?: 'confirmed' | 'pending' | 'rejected' } }>,
     reply: FastifyReply
   ) {
-    const transactions = await this.listTransactions.execute(request.query.userId)
-    return reply.send(transactions)
+    const { userId, page = 1, limit = 20, status } = request.query
+    const result = await this.listTransactions.execute(userId, { page, limit, status })
+    return reply.send(result)
   }
 
   async listPending(_request: FastifyRequest, reply: FastifyReply) {

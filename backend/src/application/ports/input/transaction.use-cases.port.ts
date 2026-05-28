@@ -1,4 +1,5 @@
 import { Transaction } from '../../../domain/entities/Transaction'
+import { PaginatedResult, PaginationParams } from '../output/ITransactionRepository'
 import { CreateTransactionParams } from '../output/ITransactionRepository'
 
 export interface ICreateTransactionUseCase {
@@ -6,7 +7,7 @@ export interface ICreateTransactionUseCase {
 }
 
 export interface IListTransactionsUseCase {
-  execute(userId: string): Promise<Transaction[]>
+  execute(userId: string, pagination: PaginationParams): Promise<PaginatedResult<Transaction>>
 }
 
 export interface IApproveTransactionUseCase {

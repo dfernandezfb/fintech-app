@@ -56,16 +56,36 @@ export async function transactionRoutes(
     {
       schema: {
         tags: ['Transactions'],
-        summary: 'List transactions for a user',
+        summary: 'List transactions for a user (paginated)',
         querystring: {
           type: 'object',
           required: ['userId'],
           properties: {
             userId: { type: 'string', pattern: UUID_PATTERN },
+            page:   { type: 'integer', minimum: 1, default: 1 },
+            limit:  { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+            status: { type: 'string', enum: ['confirmed', 'pending', 'rejected'] },
           },
         },
         response: {
-          200: { type: 'array', items: { $ref: 'Transaction#' } },
+          200: {
+            type: 'object',
+            properties: {
+              data:       { type: 'array', items: { $ref: 'Transaction#' } },
+              total:      { type: 'integer' },
+              page:       { type: 'integer' },
+              limit:      { type: 'integer' },
+              totalPages: { type: 'integer' },
+              statusCounts: {
+                type: 'object',
+                properties: {
+                  confirmed: { type: 'integer' },
+                  pending:   { type: 'integer' },
+                  rejected:  { type: 'integer' },
+                },
+              },
+            },
+          },
         },
       },
     },

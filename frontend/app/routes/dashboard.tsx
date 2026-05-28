@@ -5,15 +5,21 @@ import { api } from '~/lib/api'
 import { formatAmount, formatDate } from '~/lib/utils'
 import { TransactionStatusBadge } from '~/components/TransactionStatusBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { Button } from '~/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '~/components/ui/select'
 import { Skeleton } from '~/components/ui/skeleton'
 
+const DEFAULT_LIMIT = 20
+
 export async function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url)
-  const userId = url.searchParams.get('userId')
+  const url          = new URL(request.url)
+  const userId       = url.searchParams.get('userId')
+  const page         = Math.max(1, Number(url.searchParams.get('page')  ?? 1))
+  const limit        = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? DEFAULT_LIMIT)))
+  const statusFilter = url.searchParams.get('status') as 'confirmed' | 'pending' | 'rejected' | null
 
   const users = await api.getUsers()
 
@@ -21,9 +27,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw redirect(`/dashboard?userId=${users[0].id}`)
   }
 
-  const transactions = userId ? await api.getTransactions(userId) : []
+  const paginated = userId
+    ? await api.getTransactions(userId, page, limit, statusFilter ?? undefined)
+    : { data: [], total: 0, page: 1, limit, totalPages: 0, statusCounts: { confirmed: 0, pending: 0, rejected: 0 } }
 
-  return { users, transactions, selectedUserId: userId }
+  return { users, paginated, selectedUserId: userId, statusFilter }
 }
 
 export function HydrateFallback() {
@@ -69,30 +77,44 @@ function TruncatedReason({ reason }: { reason: string }) {
 }
 
 export default function Dashboard() {
-  const { users, transactions, selectedUserId } = useLoaderData<typeof loader>()
+  const { users, paginated, selectedUserId, statusFilter } = useLoaderData<typeof loader>()
   const navigation = useNavigation()
   const navigate   = useNavigate()
 
   const isLoading = navigation.state === 'loading'
 
-  const [statusFilter, setStatusFilter] = useState<'confirmed' | 'pending' | 'rejected' | null>(null)
+  const { data: transactions, total, page, limit, totalPages, statusCounts } = paginated
 
   const usersMap = new Map(users.map((u) => [u.id, u]))
   const userName = (id: string) => usersMap.get(id)?.name ?? id.slice(0, 8) + '…'
 
   const counts = {
-    total:     transactions.length,
-    confirmed: transactions.filter((t) => t.status === 'confirmed').length,
-    pending:   transactions.filter((t) => t.status === 'pending').length,
-    rejected:  transactions.filter((t) => t.status === 'rejected').length,
+    total:     statusCounts.confirmed + statusCounts.pending + statusCounts.rejected,
+    confirmed: statusCounts.confirmed,
+    pending:   statusCounts.pending,
+    rejected:  statusCounts.rejected,
   }
 
-  const filteredTransactions = statusFilter
-    ? transactions.filter((t) => t.status === statusFilter)
-    : transactions
+  const buildParams = (overrides: Record<string, string | null> = {}) => {
+    const params = new URLSearchParams()
+    if (selectedUserId)  params.set('userId', selectedUserId)
+    if (statusFilter)    params.set('status', statusFilter)
+    params.set('page',  String(page))
+    params.set('limit', String(limit))
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v === null) params.delete(k)
+      else            params.set(k, v)
+    }
+    return params.toString()
+  }
 
   const toggleFilter = (status: 'confirmed' | 'pending' | 'rejected') => {
-    setStatusFilter((prev) => (prev === status ? null : status))
+    const next = statusFilter === status ? null : status
+    navigate(`/dashboard?${buildParams({ status: next, page: '1' })}`)
+  }
+
+  const goToPage = (newPage: number) => {
+    navigate(`/dashboard?${buildParams({ page: String(newPage) })}`)
   }
 
   return (
@@ -125,7 +147,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {!isLoading && transactions.length > 0 && (
+      {!isLoading && (counts.confirmed + counts.pending + counts.rejected) > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
             { label: 'Total',       value: counts.total,     color: '',                 filter: null                  },
@@ -133,26 +155,28 @@ export default function Dashboard() {
             { label: 'Pendientes',  value: counts.pending,   color: 'text-amber-600',   filter: 'pending'   as const  },
             { label: 'Rechazadas',  value: counts.rejected,  color: 'text-red-600',     filter: 'rejected'  as const  },
           ].map(({ label, value, color, filter }) => {
-            const isActive    = statusFilter === filter
-            const isClickable = filter !== null
+            const isActive = statusFilter === filter
+            const handleClick = filter === null
+              ? () => navigate(`/dashboard?${buildParams({ status: null, page: '1' })}`)
+              : () => toggleFilter(filter)
+            const ringColor = filter === 'confirmed' ? 'ring-emerald-500' :
+                              filter === 'pending'   ? 'ring-amber-500'   :
+                              filter === 'rejected'  ? 'ring-red-500'     : 'ring-foreground/30'
             return (
               <Card
                 key={label}
-                onClick={() => isClickable && toggleFilter(filter)}
+                onClick={handleClick}
                 className={[
-                  isClickable ? 'cursor-pointer select-none transition-all' : '',
+                  'cursor-pointer select-none transition-all',
                   isActive
-                    ? 'ring-2 ring-offset-1 shadow-md ' +
-                      (filter === 'confirmed' ? 'ring-emerald-500' :
-                       filter === 'pending'   ? 'ring-amber-500'   :
-                                               'ring-red-500')
-                    : isClickable ? 'hover:shadow-sm hover:border-muted-foreground/30' : '',
+                    ? `ring-2 ring-offset-1 shadow-md ${ringColor}`
+                    : 'hover:shadow-sm hover:border-muted-foreground/30',
                 ].join(' ')}
               >
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     {label}
-                    {isActive && label !== 'Total' && (
+                    {isActive && filter !== null && (
                       <span className="ml-1.5 text-xs font-normal opacity-60">· click para limpiar</span>
                     )}
                   </CardTitle>
@@ -183,7 +207,7 @@ export default function Dashboard() {
           </CardTitle>
           {statusFilter && (
             <button
-              onClick={() => setStatusFilter(null)}
+              onClick={() => navigate(`/dashboard?${buildParams({ status: null, page: '1' })}`)}
               className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
             >
               Limpiar filtro
@@ -195,7 +219,7 @@ export default function Dashboard() {
             <div className="space-y-3 p-6">
               {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
             </div>
-          ) : filteredTransactions.length === 0 ? (
+          ) : transactions.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">
               {statusFilter
                 ? `No hay transacciones ${
@@ -218,7 +242,7 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTransactions.map((tx) => (
+                  {transactions.map((tx) => (
                     <tr
                       key={tx.id}
                       className={`border-b last:border-0 transition-colors ${
@@ -248,6 +272,54 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {total > 0 && (
+            <div className="flex items-center justify-between border-t px-4 py-3">
+              <p className="text-xs text-muted-foreground">
+                {total} transaccion{total !== 1 ? 'es' : ''} · página {page} de {totalPages}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Filas</span>
+                  <Select
+                    value={String(limit)}
+                    onValueChange={(val) => {
+                      navigate(`/dashboard?${buildParams({ page: '1', limit: val })}`)
+                    }}
+                  >
+                    <SelectTrigger className="h-7 w-16 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[10, 20, 50, 100].map((n) => (
+                        <SelectItem key={n} value={String(n)} className="text-xs">
+                          {n}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => goToPage(page - 1)}
+                  >
+                    ← Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => goToPage(page + 1)}
+                  >
+                    Siguiente →
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>

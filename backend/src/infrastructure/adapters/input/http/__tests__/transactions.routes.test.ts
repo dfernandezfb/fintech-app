@@ -83,8 +83,10 @@ describe('Transaction routes', () => {
       expect(res.json()).toMatchObject({ error: 'USER_NOT_FOUND' })
     })
 
-    it('returns 200 with the transactions for the user', async () => {
-      useCases.listTransactions.execute.mockResolvedValue([TX])
+    it('returns 200 with paginated transactions for the user', async () => {
+      useCases.listTransactions.execute.mockResolvedValue({
+        data: [TX], total: 1, page: 1, limit: 20, totalPages: 1,
+      })
 
       const res = await app.inject({
         method: 'GET',
@@ -93,12 +95,16 @@ describe('Transaction routes', () => {
 
       expect(res.statusCode).toBe(200)
       const body = res.json()
-      expect(body).toHaveLength(1)
-      expect(body[0].id).toBe(TX.id)
+      expect(body.data).toHaveLength(1)
+      expect(body.data[0].id).toBe(TX.id)
+      expect(body.total).toBe(1)
+      expect(body.totalPages).toBe(1)
     })
 
-    it('returns 200 with an empty array when the user has no transactions', async () => {
-      useCases.listTransactions.execute.mockResolvedValue([])
+    it('returns 200 with empty data when the user has no transactions', async () => {
+      useCases.listTransactions.execute.mockResolvedValue({
+        data: [], total: 0, page: 1, limit: 20, totalPages: 0,
+      })
 
       const res = await app.inject({
         method: 'GET',
@@ -106,7 +112,23 @@ describe('Transaction routes', () => {
       })
 
       expect(res.statusCode).toBe(200)
-      expect(res.json()).toEqual([])
+      expect(res.json().data).toEqual([])
+    })
+
+    it('forwards page and limit query params to the use case', async () => {
+      useCases.listTransactions.execute.mockResolvedValue({
+        data: [], total: 0, page: 2, limit: 5, totalPages: 0,
+      })
+
+      await app.inject({
+        method: 'GET',
+        url:    `/transactions?userId=${USER_A.id}&page=2&limit=5`,
+      })
+
+      expect(useCases.listTransactions.execute).toHaveBeenCalledWith(
+        USER_A.id,
+        { page: 2, limit: 5 }
+      )
     })
   })
 

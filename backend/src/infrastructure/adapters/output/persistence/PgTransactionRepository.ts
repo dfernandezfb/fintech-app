@@ -9,6 +9,9 @@ import {
 import {
   CreateTransactionParams,
   ITransactionRepository,
+  PaginatedResult,
+  PaginationParams,
+  StatusCounts,
 } from '../../../../application/ports/output/ITransactionRepository'
 import { DrizzleDb } from '../../../database/db'
 import { balanceMovements, transactions, users } from '../../../database/schema'
@@ -50,16 +53,48 @@ export class PgTransactionRepository implements ITransactionRepository {
     return rows.map(mapRow)
   }
 
-  async findByUserId(userId: string): Promise<Transaction[]> {
-    const rows = await this.db
-      .select()
-      .from(transactions)
-      .where(
-        or(eq(transactions.fromUserId, userId), eq(transactions.toUserId, userId))
-      )
-      .orderBy(sql`${transactions.createdAt} desc`)
+  async findByUserId(userId: string, { page, limit, status }: PaginationParams): Promise<PaginatedResult<Transaction>> {
+    const baseCondition   = or(eq(transactions.fromUserId, userId), eq(transactions.toUserId, userId))
+    const dataCondition   = status
+      ? and(baseCondition, eq(transactions.status, status))
+      : baseCondition
+    const offset = (page - 1) * limit
 
-    return rows.map(mapRow)
+    const [rows, [counts]] = await Promise.all([
+      this.db
+        .select()
+        .from(transactions)
+        .where(dataCondition)
+        .orderBy(sql`${transactions.createdAt} desc`)
+        .limit(limit)
+        .offset(offset),
+      this.db
+        .select({
+          total:     sql<number>`cast(count(*) as integer)`,
+          confirmed: sql<number>`cast(count(*) filter (where ${transactions.status} = 'confirmed') as integer)`,
+          pending:   sql<number>`cast(count(*) filter (where ${transactions.status} = 'pending') as integer)`,
+          rejected:  sql<number>`cast(count(*) filter (where ${transactions.status} = 'rejected') as integer)`,
+        })
+        .from(transactions)
+        .where(baseCondition),
+    ])
+
+    const statusCounts: StatusCounts = {
+      confirmed: counts.confirmed,
+      pending:   counts.pending,
+      rejected:  counts.rejected,
+    }
+
+    const filteredTotal = status ? statusCounts[status] : counts.total
+
+    return {
+      data:       rows.map(mapRow),
+      total:      filteredTotal,
+      page,
+      limit,
+      totalPages: Math.ceil(filteredTotal / limit),
+      statusCounts,
+    }
   }
 
   async createPending(params: CreateTransactionParams): Promise<Transaction> {

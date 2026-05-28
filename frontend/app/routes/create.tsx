@@ -97,7 +97,7 @@ export default function CreateTransaction() {
                 <Label>Desde</Label>
                 <Select value={fromUserId} onValueChange={setFromUserId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select sender" />
+                    <SelectValue placeholder="Seleccionar remitente" />
                   </SelectTrigger>
                   <SelectContent>
                     {users.map((u) => (
@@ -116,7 +116,7 @@ export default function CreateTransaction() {
                 <Label>Para</Label>
                 <Select value={toUserId} onValueChange={setToUserId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select receiver" />
+                    <SelectValue placeholder="Seleccionar destinatario" />
                   </SelectTrigger>
                   <SelectContent>
                     {users.map((u) => (
@@ -206,14 +206,14 @@ export default function CreateTransaction() {
               <p>
                 La transacción de {formatAmount(result.amount)} excede el umbral de confirmación automática
                 y requiere aprobación manual. Sigue su estado en el{' '}
-                <Link to="/approval" className="font-medium underline underline-offset-2">
+                <Link to="/aprobaciones" className="font-medium underline underline-offset-2">
                   Panel de Aprobaciones
                 </Link>.
               </p>
             )}
             <div className="flex gap-2">
               <Button size="sm" variant="outline" asChild>
-                <Link to="/create">Nueva Transacción</Link>
+                <Link to="/nueva-transaccion">Nueva Transacción</Link>
               </Button>
               <Button size="sm" variant="ghost" asChild>
                 <Link to="/dashboard">Ver Dashboard</Link>
